@@ -1,119 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Priority Matrix by SWC</title>
-  <link rel="stylesheet" href="styles.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
-  <div class="bg-glow"></div>
-  <header class="app-header">
-    <h1 class="app-title">Priority <span>Matrix</span> by SWC</h1>
-    <div class="controls">
-      <button id="newTaskBtn" class="btn primary">New task</button>
-      <input id="searchInput" class="input" type="search" placeholder="Search tasks"/>
-      <select id="dueFilter" class="select">
-        <option value="all">All due dates</option>
-        <option value="today">Due today</option>
-        <option value="week">Due this week</option>
-        <option value="overdue">Overdue</option>
-      </select>
-      <label class="toggle">
-        <input id="hideDone" type="checkbox"/>
-        <span>Hide done</span>
-      </label>
-      <button id="exportBtn" class="btn">Export</button>
-      <button id="importBtn" class="btn">Import</button>
-      <input id="importFile" type="file" accept=".json" hidden/>
-    </div>
-  </header>
+  <div class="app">
+    <header class="app-header">
+      <h1>Priority Matrix <span class="brand">by SWC</span></h1>
+      <div class="actions">
+        <button id="newTaskBtn" class="btn primary">New task</button>
+        <button id="exportBtn" class="btn">Export</button>
+        <label class="import-label btn">
+          Import
+          <input id="importInput" type="file" accept="application/json" hidden />
+        </label>
+        <button id="printBtn" class="btn">Print</button>
+        <button id="clearBtn" class="btn danger">Clear all</button>
+      </div>
+    </header>
 
-  <main class="board" aria-label="Priority matrix board">
-    <section class="column" data-quadrant="now" aria-label="Do now">
-      <h2>Do now</h2>
-      <div class="dropzone" data-quadrant="now"></div>
-      <p class="hint">Urgent and important</p>
+    <section class="legend">
+      <div class="legend-grid">
+        <div><span class="dot urgent"></span>Urgent</div>
+        <div><span class="dot important"></span>Important</div>
+        <div><span class="dot not-urgent"></span>Not urgent</div>
+        <div><span class="dot not-important"></span>Not important</div>
+      </div>
     </section>
 
-    <section class="column" data-quadrant="schedule" aria-label="Schedule">
-      <h2>Schedule</h2>
-      <div class="dropzone" data-quadrant="schedule"></div>
-      <p class="hint">Not urgent but important</p>
-    </section>
+    <main class="matrix" aria-label="Eisenhower priority matrix">
+      <div class="quadrant" data-quad="do">
+        <div class="quad-header">
+          <h2>Do now</h2>
+          <p>Urgent and important</p>
+          <span class="count" id="count-do">0</span>
+        </div>
+        <ul class="task-list" id="list-do"></ul>
+      </div>
+      <div class="quadrant" data-quad="schedule">
+        <div class="quad-header">
+          <h2>Schedule</h2>
+          <p>Not urgent but important</p>
+          <span class="count" id="count-schedule">0</span>
+        </div>
+        <ul class="task-list" id="list-schedule"></ul>
+      </div>
+      <div class="quadrant" data-quad="delegate">
+        <div class="quad-header">
+          <h2>Delegate</h2>
+          <p>Urgent but not important</p>
+          <span class="count" id="count-delegate">0</span>
+        </div>
+        <ul class="task-list" id="list-delegate"></ul>
+      </div>
+      <div class="quadrant" data-quad="drop">
+        <div class="quad-header">
+          <h2>Drop</h2>
+          <p>Not urgent and not important</p>
+          <span class="count" id="count-drop">0</span>
+        </div>
+        <ul class="task-list" id="list-drop"></ul>
+      </div>
+    </main>
 
-    <section class="column" data-quadrant="delegate" aria-label="Delegate">
-      <h2>Delegate</h2>
-      <div class="dropzone" data-quadrant="delegate"></div>
-      <p class="hint">Urgent but not important</p>
-    </section>
+    <footer class="app-footer">
+      <div class="tips">
+        <span>Tips</span>
+        <ul>
+          <li>Double click a task to edit</li>
+          <li>Drag to move between quadrants</li>
+          <li>Use numbers 1 to 4 to add into Do now, Schedule, Delegate, or Drop</li>
+          <li>Press E to export, P to print</li>
+        </ul>
+      </div>
+    </footer>
+  </div>
 
-    <section class="column" data-quadrant="drop" aria-label="Drop">
-      <h2>Drop</h2>
-      <div class="dropzone" data-quadrant="drop"></div>
-      <p class="hint">Not urgent and not important</p>
-    </section>
-  </main>
-
+  <!-- Dialogs -->
   <dialog id="taskDialog">
-    <form id="taskForm" method="dialog" class="task-form">
-      <h3 id="dialogTitle">Add task</h3>
-      <label>
+    <form method="dialog" class="task-form">
+      <h3 id="dialogTitle">New task</h3>
+      <label class="field">
         <span>Title</span>
-        <input name="title" type="text" required maxlength="120" placeholder="What is the task"/>
+        <input id="taskTitle" type="text" required maxlength="120" />
       </label>
-      <label>
+      <label class="field">
         <span>Notes</span>
-        <textarea name="notes" rows="4" placeholder="Optional details"></textarea>
+        <textarea id="taskNotes" rows="4" maxlength="500"></textarea>
       </label>
-      <label class="row">
-        <span>Due</span>
-        <input name="dueDate" type="date"/>
-      </label>
-      <label class="row">
-        <span>Quadrant</span>
-        <select name="quadrant">
-          <option value="now">Do now</option>
-          <option value="schedule">Schedule</option>
-          <option value="delegate">Delegate</option>
-          <option value="drop">Drop</option>
-        </select>
-      </label>
-      <menu class="dialog-actions">
-        <button value="cancel" class="btn ghost">Cancel</button>
+      <div class="row">
+        <label class="field">
+          <span>Deadline</span>
+          <input id="taskDue" type="date" />
+        </label>
+        <label class="field">
+          <span>Quadrant</span>
+          <select id="taskQuad">
+            <option value="do">Do now</option>
+            <option value="schedule">Schedule</option>
+            <option value="delegate">Delegate</option>
+            <option value="drop">Drop</option>
+          </select>
+        </label>
+      </div>
+      <menu>
+        <button value="cancel" class="btn">Cancel</button>
         <button id="saveTaskBtn" value="default" class="btn primary">Save</button>
       </menu>
-      <input type="hidden" name="id"/>
     </form>
   </dialog>
 
-  <template id="taskTemplate">
-    <article class="task" draggable="true">
+  <template id="taskItemTemplate">
+    <li class="task" draggable="true">
       <div class="task-main">
-        <label class="tick">
-          <input type="checkbox" class="task-done"/>
-          <span class="tick-mark"></span>
-        </label>
-        <div class="task-body">
-          <h4 class="task-title"></h4>
-          <p class="task-notes"></p>
-          <div class="task-meta">
-            <span class="badge due"></span>
-            <span class="badge created"></span>
-          </div>
+        <input class="tick" type="checkbox" />
+        <div class="text">
+          <div class="title"></div>
+          <div class="meta"></div>
+        </div>
+        <div class="task-actions">
+          <button class="icon-btn edit" title="Edit" aria-label="Edit">✏️</button>
+          <button class="icon-btn delete" title="Delete" aria-label="Delete">🗑️</button>
         </div>
       </div>
-      <div class="task-actions">
-        <button class="icon-btn edit" title="Edit" aria-label="Edit task">✎</button>
-        <button class="icon-btn delete" title="Delete" aria-label="Delete task">✕</button>
-      </div>
-    </article>
+    </li>
   </template>
 
-  <footer class="app-footer">
-    <p>Tip: Press N to add a task, press slash to search, drag to move items</p>
-  </footer>
-
-  <script src="script.js"></script>
+  <script src="app.js"></script>
 </body>
+
 </html>
